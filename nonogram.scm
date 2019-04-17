@@ -62,7 +62,8 @@ exec csi -s $0 $@
     zero?
     (let lp ((i 0) (prev 0))
       (cond ((= i limit) (list prev))
-            ((ref i) (lp (add1 i) (add1 prev)))
+            ((eqv? (ref i) #t)
+             (lp (add1 i) (add1 prev)))
             (else (cons prev (lp (add1 i) 0)))))))
 
 (define (compute-hints/lines g)
@@ -118,13 +119,8 @@ exec csi -s $0 $@
         (cons (map (lambda (il) (list-ref il i)) l)
               (lp (add1 i))))))
 
-
-(define (remove-xs! grid)
-  (let ((v (grid-data grid)))
-    (vector-for-each (lambda (i val)
-                       (when (eqv? val 'x)
-                         (vector-set! v i #f)))
-                     v)))
+(define (clamp x low hi)
+  (min (max x low) hi))
 
 (define width 10)
 (define height 10)
@@ -138,8 +134,8 @@ exec csi -s $0 $@
 (define col-hints (compute-hints/columns g))
 (define max-line (biggest-list line-hints))
 (define max-col (biggest-list col-hints))
-(set! col-hints (rotate-list (normalize-hints col-hints max-col)
-                             max-col))
+(define display-column-hints (rotate-list (normalize-hints col-hints max-col)
+                                          max-col))
 
 (define play-grid (empty-grid (grid-width g) (grid-height g)))
 
@@ -169,9 +165,6 @@ exec csi -s $0 $@
 (define x 0)
 (define y 0)
 
-(define (clamp x low hi)
-  (min (max x low) hi))
-
 (with-stty '((not icanon) (not echo))
   (lambda ()
     (display "\x1b[?1049h")
@@ -179,7 +172,7 @@ exec csi -s $0 $@
     (let lp ()
       (display (cursor-position 1 1))
       (display (erase-display))
-      (display-grid play-grid line-hints col-hints)
+      (display-grid play-grid line-hints display-column-hints)
       (display (cursor-position (+ y 1 max-col) (+ (* x 2) 1)))
       (case (input)
         ((up) (set! y (clamp (- y 1) 0 (- height 1))))
@@ -194,8 +187,10 @@ exec csi -s $0 $@
 
 (display "\x1b[?1049l")
 
-(remove-xs! play-grid)
-(if (equal? play-grid g) ;; TODO make that work when multiple solutions
+(if (and (equal? (compute-hints/lines play-grid)
+                 line-hints)
+         (equal? (compute-hints/columns play-grid)
+                 col-hints))
     (print "Nice!")
     (print "Nope :("))
-(display-grid g line-hints col-hints)
+(display-grid play-grid line-hints display-column-hints)

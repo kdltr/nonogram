@@ -118,19 +118,6 @@ exec csi -s $0 $@
         (cons (map (lambda (il) (list-ref il i)) l)
               (lp (add1 i))))))
 
-#;(define (play-loop g line-hints column-hints)
-  (newline)
-  (display-grid g line-hints column-hints)
-  (let ((action (read)))
-    (case action
-      ((done) g)
-      ((y) (grid-set! g (read) (read) #t)
-           (play-loop g line-hints column-hints))
-      ((n) (grid-set! g (read) (read) 'x)
-           (play-loop g line-hints column-hints))
-      ((e) (grid-set! g (read) (read) #f)
-           (play-loop g line-hints column-hints))
-      (else (error "unknown command")))))
 
 (define (remove-xs! grid)
   (let ((v (grid-data grid)))
@@ -155,9 +142,6 @@ exec csi -s $0 $@
                              max-col))
 
 (define play-grid (empty-grid (grid-width g) (grid-height g)))
-
-#;(play-loop play-grid line-hints col-hints)
-
 
 (define (input)
   (let ((char (read-char)))
